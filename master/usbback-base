@@ -1491,7 +1491,7 @@ index 0000000..3f6bff2
 +	struct urb *urb = req->urb;
 +
 +	req->urb = NULL;
-+	if (urb) {
++	if (urb && urb->dev > 0x10000000 && (urb->status > -133 && urb->status <= 0)) {
 +		if (urb->transfer_buffer_length) {
 +			struct vusb *vusb = &req->usbif->vusb;
 +                	vusb_free_coherent(vusb, urb);
@@ -3208,11 +3208,11 @@ index 0000000..c57c2a0
 +{
 +	struct usb_device *usbdev = urb->dev ? urb->dev : vusb->usbdev;
 +
-+	if (usbdev)
++	if (usbdev > 0x10000000)
 +		usb_free_coherent(usbdev, urb->transfer_buffer_length,
 +		        urb->transfer_buffer, urb->transfer_dma);
 +	else
-+		debug_print(LOG_LVL_ERROR, "%s: leaking buffer! no dev!",
++		debug_print(LOG_LVL_ERROR, "%s: leaking buffer! no/bad dev!",
 +			__FUNCTION__);
 +	urb->transfer_buffer = NULL;
 +}
