@@ -9,6 +9,7 @@ completion routine runs - hold a ref count on the URBs until the final
 cleanup in vusb_free_coherent.
 
 Signed-off-by: Ross Philipson <ross.philipson@gmail.com>
+----
 diff --git a/drivers/usb/xen-usbback/common.h b/drivers/usb/xen-usbback/common.h
 index 27977cd..76dbdb3 100644
 --- a/drivers/usb/xen-usbback/common.h
@@ -104,10 +105,10 @@ index 8e32d75..ccd3575 100644
  
  	printk("USB backend driver intialized!\n");
 diff --git a/drivers/usb/xen-usbback/vusb.c b/drivers/usb/xen-usbback/vusb.c
-index 60b2c43..1a2a92b 100644
+index 60b2c43..61de5a4 100644
 --- a/drivers/usb/xen-usbback/vusb.c
 +++ b/drivers/usb/xen-usbback/vusb.c
-@@ -876,12 +876,22 @@ void vusb_free_coherent(struct vusb *vusb, struct urb *urb)
+@@ -876,13 +876,25 @@ void vusb_free_coherent(struct vusb *vusb, struct urb *urb)
  {
  	struct usb_device *usbdev = urb->dev ? urb->dev : vusb->usbdev;
  
@@ -117,6 +118,8 @@ index 60b2c43..1a2a92b 100644
  		usb_free_coherent(usbdev, urb->transfer_buffer_length,
  		        urb->transfer_buffer, urb->transfer_dma);
 -	else
++		urb->transfer_buffer = NULL;
++
 +		/* The urb had its ref count bumped before being queued for
 +		 * cleanup in the bottom half async_free_reqs(). This was to
 +		 * keep it alive so it can be asynchronously cleaned up.
@@ -128,7 +131,9 @@ index 60b2c43..1a2a92b 100644
 +	else {
  		debug_print(LOG_LVL_ERROR, "%s: leaking buffer! no dev!",
  			__FUNCTION__);
+-	urb->transfer_buffer = NULL;
++		urb->transfer_buffer = NULL;
 +	}
- 	urb->transfer_buffer = NULL;
  }
  
+ void *vusb_alloc_coherent(struct vusb *vusb, size_t size, dma_addr_t *dma)
